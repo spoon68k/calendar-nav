@@ -1,5 +1,9 @@
 local M = {}
 
+-- We assume the output is an 8-row x 64-column grid.
+local total_rows = 8
+local total_cols = 64
+
 -- Internal configuration (will be updated via M.configure)
 M.config = {
   dailies_dir = "dailies",
@@ -28,15 +32,14 @@ end
 -- Returns a mapping table (mapping[row][col] → {year, month, day})
 -- and a list of text lines (the cal output) to be shown in the float.
 local function build_calendar_mapping(year, month)
+  local out = io.open('/tmp/dan.txt', 'w')
+
   local cmd = string.format("cal -3 -m --color=never %d %d", month, year)
   local handle = io.popen(cmd)
   local cal_output = handle:read("*a")
   handle:close()
   local lines = vim.split(cal_output, "\n", { trimempty = true })
 
-  -- We assume the output is an 8-row x 64-column grid.
-  local total_rows = 8
-  local total_cols = 64
   local mapping = {}
   for r = 1, total_rows do
     mapping[r] = {}
@@ -113,6 +116,7 @@ local function build_calendar_mapping(year, month)
     end
   end
 
+  out:close()
   return mapping, lines
 end
 
@@ -170,19 +174,19 @@ function M.open_calendar_nav()
         vim.api.nvim_win_close(win, true)
         vim.cmd("edit " .. filepath)
       else
-        vim.notify("Not a valid date", vim.log.levels.INFO)
+        vim.notify("Select a date!", vim.log.levels.INFO)
       end
     end,
   })
 
   -- Position the cursor on today's date.
   local target_row, target_col
-  for r = 1, #mapping do
-    for c = 1, #mapping[r] do
+  for r = 1, total_rows do
+    for c = 1, total_cols do
       local cell = mapping[r][c]
       if cell and cell.year == today.year and cell.month == today.month and cell.day == today.day then
         target_row = r
-        target_col = c - 1  -- win_set_cursor expects a 0-indexed column.
+        target_col = cell.day < 10 and c or c - 1  -- win_set_cursor expects a 0-indexed column.
         break
       end
     end
