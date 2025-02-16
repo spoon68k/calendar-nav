@@ -32,8 +32,6 @@ end
 -- Returns a mapping table (mapping[row][col] → {year, month, day})
 -- and a list of text lines (the cal output) to be shown in the float.
 local function build_calendar_mapping(year, month)
-  local out = io.open('/tmp/dan.txt', 'w')
-
   local cmd = string.format("cal -3 -m --color=never %d %d", month, year)
   local handle = io.popen(cmd)
   local cal_output = handle:read("*a")
@@ -116,7 +114,6 @@ local function build_calendar_mapping(year, month)
     end
   end
 
-  out:close()
   return mapping, lines
 end
 
